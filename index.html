@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ColoproctoDOC — Contas do Consultório</title>
+  <style>
+    :root {
+      --primary: #0a7c82;
+      --primary-dark: #065a5e;
+      --primary-light: #e8f5f6;
+      --accent: #f0a500;
+      --bg: #f0f4f5;
+      --card: #ffffff;
+      --text: #1a2332;
+      --muted: #6b7280;
+      --border: #d1d9e0;
+      --norton: #1d6fa4;
+      --eron: #6b38a6;
+      --green: #16a34a;
+      --red: #dc2626;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Config warning ── */
+    #config-warning {
+      display: none;
+      background: #fef08a;
+      color: #713f12;
+      padding: 0.6rem 1.5rem;
+      font-size: 0.875rem;
+      text-align: center;
+      border-bottom: 2px solid #eab308;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--primary-dark);
+      color: white;
+      padding: 0.9rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    header h1 { font-size: 1.15rem; font-weight: 700; letter-spacing: 0.3px; }
+    header .sub { font-size: 0.72rem; opacity: 0.75; margin-top: 1px; }
+
+    .year-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .year-nav button {
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 5px;
+      width: 28px; height: 28px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      line-height: 1;
+      transition: background 0.15s;
+    }
+    .year-nav button:hover { background: rgba(255,255,255,0.28); }
+    .year-nav span { font-size: 1.05rem; font-weight: 700; min-width: 48px; text-align: center; }
+
+    /* ── Month tabs ── */
+    nav#tabs {
+      background: var(--primary);
+      display: flex;
+      overflow-x: auto;
+      scrollbar-width: none;
+      position: sticky;
+      top: 56px;
+      z-index: 99;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+    }
+    nav#tabs::-webkit-scrollbar { display: none; }
+
+    nav#tabs button {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.72);
+      padding: 0.7rem 1.1rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      border-bottom: 3px solid transparent;
+      transition: all 0.15s;
+    }
+    nav#tabs button:hover { color: white; background: rgba(255,255,255,0.1); }
+    nav#tabs button.active { color: white; border-bottom-color: var(--accent); font-weight: 600; }
+
+    /* ── Status pill ── */
+    #status-bar {
+      position: fixed;
+      bottom: 1.2rem;
+      right: 1.2rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      z-index: 200;
+      opacity: 0;
+      transition: opacity 0.25s;
+      pointer-events: none;
+    }
+    #status-bar.saving { background: #fef3c7; color: #92400e; opacity: 1; }
+    #status-bar.saved  { background: #dcfce7; color: #166534; opacity: 1; }
+    #status-bar.error  { background: #fee2e2; color: #991b1b; opacity: 1; }
+
+    /* ── Main layout ── */
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+
+    .card-title {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      padding: 0.65rem 1.25rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── Expense rows ── */
+    .exp-row {
+      display: grid;
+      grid-template-columns: 210px 1fr 130px;
+      align-items: center;
+      padding: 0.55rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      gap: 0.75rem;
+    }
+    .exp-row:last-child { border-bottom: none; }
+
+    .exp-label { font-size: 0.875rem; font-weight: 500; }
+    .exp-sub   { font-size: 0.7rem; color: var(--muted); margin-top: 1px; }
+
+    .exp-inputs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      align-items: center;
+    }
+    .exp-inputs label {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.76rem;
+      color: var(--muted);
+    }
+
+    /* ── Inputs / selects ── */
+    input[type="number"],
+    input[type="text"],
+    select {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.32rem 0.55rem;
+      font-size: 0.83rem;
+      color: var(--text);
+      background: white;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input[type="number"]:focus,
+    input[type="text"]:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(10,124,130,0.12);
+    }
+
+    input[type="number"]        { width: 120px; }
+    input[type="number"].sm     { width: 76px; }
+    select.paid-by              { width: 128px; }
+
+    .computed {
+      font-size: 0.73rem;
+      background: var(--bg);
+      border-radius: 4px;
+      padding: 0.18rem 0.5rem;
+      white-space: nowrap;
+    }
+    .computed .n { color: var(--norton); font-weight: 600; }
+    .computed .e { color: var(--eron);   font-weight: 600; }
+
+    /* ── Extras table ── */
+    .extras-wrap { overflow-x: auto; }
+
+    table.xt {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    table.xt th {
+      background: var(--bg);
+      font-size: 0.73rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      padding: 0.45rem 0.6rem;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+    table.xt td {
+      padding: 0.32rem 0.45rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    table.xt tr:last-child td { border-bottom: none; }
+    table.xt input[type="text"] { width: 100%; min-width: 140px; }
+    table.xt input[type="number"] { width: 100px; }
+    table.xt select { width: 110px; }
+    table.xt .total-cell { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+
+    .btn-del {
+      background: none;
+      border: none;
+      color: var(--red);
+      cursor: pointer;
+      font-size: 0.95rem;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      opacity: 0.7;
+    }
+    .btn-del:hover { background: #fee2e2; opacity: 1; }
+
+    .btn-add {
+      margin: 0.7rem 1.25rem;
+      background: none;
+      border: 1px dashed var(--primary);
+      color: var(--primary);
+      padding: 0.38rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.83rem;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    .btn-add:hover { background: var(--primary-light); }
+
+    /* ── Summary ── */
+    #summary {
+      max-width: 980px;
+      margin: 0 auto 3rem;
+      padding: 0 1.5rem;
+    }
+
+    .sum-card {
+      background: var(--primary-dark);
+      color: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(6,90,94,0.25);
+    }
+
+    .sum-card h2 {
+      padding: 0.9rem 1.5rem 0.4rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0.75;
+    }
+
+    table.st {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    table.st th, table.st td {
+      padding: 0.55rem 1.5rem;
+      text-align: right;
+    }
+    table.st th:first-child, table.st td:first-child { text-align: left; }
+
+    table.st thead th {
+      background: rgba(255,255,255,0.08);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      opacity: 0.7;
+    }
+    table.st th.nc { color: #93c5fd; opacity: 1; }
+    table.st th.ec { color: #c4b5fd; opacity: 1; }
+
+    table.st tbody tr:nth-child(even) { background: rgba(255,255,255,0.04); }
+
+    .row-bal td {
+      font-size: 1.05rem;
+      font-weight: 700;
+      border-top: 1px solid rgba(255,255,255,0.15);
+    }
+    .pos { color: #4ade80; }
+    .neg { color: #f87171; }
+
+    #verdict {
+      padding: 0.9rem 1.5rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      text-align: center;
+      border-top: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.08);
+    }
+    #verdict.ok    { color: #a3e635; }
+    #verdict.owing { color: #fde68a; }
+
+    /* ── Responsive ── */
+    @media (max-width: 680px) {
+      .exp-row {
+        grid-template-columns: 1fr;
+        gap: 0.35rem;
+        padding: 0.7rem 1rem;
+      }
+      select.paid-by { width: 100%; }
+      input[type="number"] { width: 100%; }
+      table.st th, table.st td { padding: 0.45rem 0.75rem; font-size: 0.82rem; }
+      #summary { padding: 0 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="config-warning">
+  ⚠ Configure o Supabase antes de usar: edite <strong>SUPABASE_URL</strong> e <strong>SUPABASE_ANON_KEY</strong> no início do &lt;script&gt; neste arquivo.
+  Os dados <strong>não serão salvos</strong> até que as credenciais sejam inseridas.
+</div>
+
+<header>
+  <div>
+    <h1>ColoproctoDOC</h1>
+    <div class="sub">Gestão de Contas do Consultório</div>
+  </div>
+  <div class="year-nav">
+    <button id="year-prev" title="Ano anterior">‹</button>
+    <span id="year-display"></span>
+    <button id="year-next" title="Próximo ano">›</button>
+  </div>
+</header>
+
+<nav id="tabs"></nav>
+
+<div id="status-bar"></div>
+
+<main>
+  <div class="card">
+    <div class="card-title">Despesas do Mês</div>
+    <div id="expenses-container"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      Extras
+      <span style="font-weight:400;text-transform:none;font-size:0.78rem;opacity:0.65"> — CRM, consertos, alvarás…</span>
+    </div>
+    <div class="extras-wrap">
+      <table class="xt">
+        <thead>
+          <tr>
+            <th>Descrição</th>
+            <th>Norton (R$)</th>
+            <th>Eron (R$)</th>
+            <th>Total</th>
+            <th>Quem pagou</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="extras-tbody"></tbody>
+      </table>
+    </div>
+    <button class="btn-add" id="btn-add-extra">+ Adicionar item</button>
+  </div>
+</main>
+
+<section id="summary">
+  <div class="sum-card">
+    <h2>Resumo do Mês</h2>
+    <table class="st">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="nc">Norton</th>
+          <th class="ec">Eron</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Cota nas despesas</td>
+          <td id="n-owed">R$ 0,00</td>
+          <td id="e-owed">R$ 0,00</td>
+        </tr>
+        <tr>
+          <td>Total que pagou</td>
+          <td id="n-paid">R$ 0,00</td>
+          <td id="e-paid">R$ 0,00</td>
+        </tr>
+        <tr class="row-bal">
+          <td>Saldo (pago − cota)</td>
+          <td><span id="n-balance" class="pos">R$ 0,00</span></td>
+          <td><span id="e-balance" class="pos">R$ 0,00</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <div id="verdict" class="ok">— Insira os dados do mês —</div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+// ================================================================
+// CONFIG — edite apenas estas duas linhas
+// ================================================================
+const SUPABASE_URL      = 'https://foduwoekuygmnqjrjqfz.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_2GpOe2TMxp_jFCRMoXKE7w_L046z5nP';
+// ================================================================
+
+const PLACEHOLDER = '__PLACEHOLDER__';
+
+// ── Supabase client ──────────────────────────────────────────────
+const db = (SUPABASE_URL !== PLACEHOLDER)
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+if (SUPABASE_URL === PLACEHOLDER) {
+  document.getElementById('config-warning').style.display = 'block';
+}
+
+// ── Constants ───────────────────────────────────────────────────
+const MONTHS = [
+  'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+  'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'
+];
+
+const EXPENSE_DEFS = [
+  { key: 'aluguel',           label: 'Aluguel',                    sub: '50% cada',                                   type: 'simple'      },
+  { key: 'salario_deisiane',  label: 'Salário Deisiane',           sub: 'Base 50/50 + bônus proporcional a consultas', type: 'deisiane'    },
+  { key: 'salario_ionide',    label: 'Salário Ionide',             sub: 'Norton paga R$1.000 a mais que Eron',         type: 'ionide'      },
+  { key: 'esterilizacao',     label: 'Esterilização de Materiais', sub: '50% cada',                                   type: 'simple'      },
+  { key: 'hi_doctor',         label: 'Hi Doctor (Prontuário)',     sub: '50% cada',                                   type: 'simple'      },
+  { key: 'medicina_trabalho', label: 'Medicina do Trabalho',       sub: '50% cada',                                   type: 'simple'      },
+  { key: 'condominio1',       label: 'Condomínio 1',               sub: '50% cada',                                   type: 'simple'      },
+  { key: 'condominio2',       label: 'Condomínio 2',               sub: '50/50 do total − academia; academia = Eron', type: 'condominio2' },
+  { key: 'diarista',          label: 'Diarista',                   sub: '50% cada',                                   type: 'simple'      },
+  { key: 'telefone',          label: 'Telefone Celular',           sub: '50% cada',                                   type: 'simple'      },
+  { key: 'copel1',            label: 'Copel 1',                    sub: '50% cada',                                   type: 'simple'      },
+  { key: 'copel2',            label: 'Copel 2',                    sub: '50% cada',                                   type: 'simple'      },
+  { key: 'fgts',              label: 'FGTS',                       sub: '50% cada',                                   type: 'simple'      },
+  { key: 'inss',              label: 'INSS',                       sub: '50% cada',                                   type: 'simple'      },
+  { key: 'contador',          label: 'Contador',                   sub: '50% cada',                                   type: 'simple'      },
+  { key: 'simples_nacional',  label: 'Simples Nacional',           sub: 'Proporcional ao valor das NFs emitidas',     type: 'simples'     },
+  { key: 'ligga',             label: 'Ligga Internet',             sub: '50% cada',                                   type: 'simple'      },
+  { key: 'sercomtel',         label: 'Sercomtel (Tel. Fixo)',      sub: '50% cada',                                   type: 'simple'      },
+];
+
+// ── App state ───────────────────────────────────────────────────
+const now = new Date();
+const state = {
+  year:      now.getFullYear(),
+  month:     now.getMonth(),
+  data:      {},
+  saveTimer: null,
+};
+
+function monthKey() {
+  return `${state.year}-${String(state.month + 1).padStart(2, '0')}`;
+}
+
+// ── API layer ───────────────────────────────────────────────────
+async function loadMonth(my) {
+  if (!db) return {};
+  const { data, error } = await db
+    .from('monthly_expenses')
+    .select('data')
+    .eq('month_year', my)
+    .single();
+  if (error && error.code !== 'PGRST116') {
+    console.error('loadMonth:', error);
+    return {};
+  }
+  return (data && data.data) ? data.data : {};
+}
+
+async function saveMonth(my, expData) {
+  if (!db) return;
+  const { error } = await db
+    .from('monthly_expenses')
+    .upsert({ month_year: my, data: expData }, { onConflict: 'month_year' });
+  if (error) throw error;
+}
+
+// ── Calculation engine ──────────────────────────────────────────
+function n(v) { return (v !== null && v !== undefined && v !== '') ? parseFloat(v) : 0; }
+
+function calcHalf(valor) {
+  const v = n(valor);
+  return { nShare: v / 2, eShare: v / 2, total: v };
+}
+
+function calcIonide(total) {
+  const t = n(total);
+  const eRaw = (t - 1000) / 2;
+  const eShare = Math.max(0, eRaw);
+  const nShare = t - eShare;
+  return { nShare, eShare, total: t };
+}
+
+function calcDeisiane(base, bonus, cn, ce) {
+  const b = n(base), bo = n(bonus), consultN = n(cn), consultE = n(ce);
+  const totalC = consultN + consultE;
+  const nShare = b / 2 + (totalC > 0 ? bo * (consultN / totalC) : bo / 2);
+  const eShare = b / 2 + (totalC > 0 ? bo * (consultE / totalC) : bo / 2);
+  return { nShare, eShare, total: b + bo };
+}
+
+function calcCondominio2(total, academia) {
+  const t = n(total), a = n(academia);
+  const base = t - a;
+  return { nShare: base / 2, eShare: base / 2 + a, total: t };
+}
+
+function calcSimples(valor, nfN, nfE) {
+  const v = n(valor), nn = n(nfN), ne = n(nfE);
+  const totalNF = nn + ne;
+  const nShare = totalNF > 0 ? v * (nn / totalNF) : v / 2;
+  const eShare = totalNF > 0 ? v * (ne / totalNF) : v / 2;
+  return { nShare, eShare, total: v };
+}
+
+function applyPayment(calc, paidBy) {
+  if (paidBy === 'norton') return { nPaid: calc.total, ePaid: 0 };
+  if (paidBy === 'eron')   return { nPaid: 0, ePaid: calc.total };
+  if (paidBy === 'ambos')  return { nPaid: calc.nShare, ePaid: calc.eShare };
+  return { nPaid: 0, ePaid: 0 };
+}
+
+function calculateAll(data) {
+  let nOwed = 0, eOwed = 0, nPaid = 0, ePaid = 0;
+
+  for (const def of EXPENSE_DEFS) {
+    const d = data[def.key] || {};
+    let calc;
+    switch (def.type) {
+      case 'simple':      calc = calcHalf(d.valor);                                            break;
+      case 'deisiane':    calc = calcDeisiane(d.base, d.bonus, d.consultas_norton, d.consultas_eron); break;
+      case 'ionide':      calc = calcIonide(d.total);                                          break;
+      case 'condominio2': calc = calcCondominio2(d.total, d.academia);                         break;
+      case 'simples':     calc = calcSimples(d.valor, d.nf_norton, d.nf_eron);                 break;
+      default:            calc = { nShare: 0, eShare: 0, total: 0 };
+    }
+    const pay = applyPayment(calc, d.paid_by);
+    nOwed += calc.nShare;
+    eOwed += calc.eShare;
+    nPaid += pay.nPaid;
+    ePaid += pay.ePaid;
+  }
+
+  // Extras
+  const extras = Array.isArray(data.extras) ? data.extras : [];
+  for (const ex of extras) {
+    const nv = n(ex.norton), ev = n(ex.eron), tot = nv + ev;
+    nOwed += nv;
+    eOwed += ev;
+    if (ex.paid_by === 'norton')     { nPaid += tot; }
+    else if (ex.paid_by === 'eron')  { ePaid += tot; }
+    else if (ex.paid_by === 'ambos') { nPaid += nv; ePaid += ev; }
+  }
+
+  return {
+    norton: { owed: nOwed, paid: nPaid, balance: nPaid - nOwed },
+    eron:   { owed: eOwed, paid: ePaid, balance: ePaid - eOwed },
+  };
+}
+
+// ── Helpers ─────────────────────────────────────────────────────
+const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const fmt = v => BRL.format(v || 0);
+const fmtVal = v => (v !== null && v !== undefined && v !== '') ? parseFloat(v) : '';
+
+function paidByHTML(key, value) {
+  const opts = [
+    ['', '— Quem pagou? —'],
+    ['norton', 'Norton'],
+    ['eron', 'Eron'],
+    ['ambos', 'Ambos'],
+  ];
+  const options = opts.map(([v, l]) =>
+    `<option value="${v}"${value === v ? ' selected' : ''}>${l}</option>`
+  ).join('');
+  return `<select class="paid-by" data-key="${key}" data-field="paid_by">${options}</select>`;
+}
+
+function numHTML(key, field, value, placeholder, cls = '') {
+  return `<input type="number" step="0.01" min="0" class="${cls}" data-key="${key}" data-field="${field}" value="${fmtVal(value)}" placeholder="${placeholder}">`;
+}
+
+function computedSpan(id, nVal, eVal) {
+  return `<span class="computed" id="cp_${id}"><span class="n">N: ${fmt(nVal)}</span> · <span class="e">E: ${fmt(eVal)}</span></span>`;
+}
+
+// ── Input templates ─────────────────────────────────────────────
+function tplSimple(def, d) {
+  return `
+    <div class="exp-inputs">
+      ${numHTML(def.key, 'valor', d.valor, 'R$ 0,00')}
+    </div>
+    ${paidByHTML(def.key, d.paid_by)}`;
+}
+
+function tplDeisiane(def, d) {
+  const c = calcDeisiane(d.base, d.bonus, d.consultas_norton, d.consultas_eron);
+  return `
+    <div class="exp-inputs">
+      <label>Salário base ${numHTML(def.key, 'base', d.base, '0,00')}</label>
+      <label>Bônus ${numHTML(def.key, 'bonus', d.bonus, '0,00')}</label>
+      <label>Consultas Norton ${numHTML(def.key, 'consultas_norton', d.consultas_norton, '0', 'sm')}</label>
+      <label>Consultas Eron ${numHTML(def.key, 'consultas_eron', d.consultas_eron, '0', 'sm')}</label>
+      ${computedSpan(def.key, c.nShare, c.eShare)}
+    </div>
+    ${paidByHTML(def.key, d.paid_by)}`;
+}
+
+function tplIonide(def, d) {
+  const c = calcIonide(d.total);
+  return `
+    <div class="exp-inputs">
+      <label>Total ${numHTML(def.key, 'total', d.total, 'R$ 0,00')}</label>
+      ${computedSpan(def.key, c.nShare, c.eShare)}
+    </div>
+    ${paidByHTML(def.key, d.paid_by)}`;
+}
+
+function tplCondominio2(def, d) {
+  const c = calcCondominio2(d.total, d.academia);
+  return `
+    <div class="exp-inputs">
+      <label>Total ${numHTML(def.key, 'total', d.total, 'R$ 0,00')}</label>
+      <label>Taxa academia (Eron) ${numHTML(def.key, 'academia', d.academia, '0,00')}</label>
+      ${computedSpan(def.key, c.nShare, c.eShare)}
+    </div>
+    ${paidByHTML(def.key, d.paid_by)}`;
+}
+
+function tplSimples(def, d) {
+  const c = calcSimples(d.valor, d.nf_norton, d.nf_eron);
+  return `
+    <div class="exp-inputs">
+      <label>Total ${numHTML(def.key, 'valor', d.valor, 'R$ 0,00')}</label>
+      <label>NF Norton ${numHTML(def.key, 'nf_norton', d.nf_norton, '0,00')}</label>
+      <label>NF Eron ${numHTML(def.key, 'nf_eron', d.nf_eron, '0,00')}</label>
+      ${computedSpan(def.key, c.nShare, c.eShare)}
+    </div>
+    ${paidByHTML(def.key, d.paid_by)}`;
+}
+
+const TEMPLATES = { simple: tplSimple, deisiane: tplDeisiane, ionide: tplIonide, condominio2: tplCondominio2, simples: tplSimples };
+
+// ── Renderers ────────────────────────────────────────────────────
+function renderTabs() {
+  document.getElementById('tabs').innerHTML = MONTHS.map((m, i) =>
+    `<button data-month="${i}" class="${i === state.month ? 'active' : ''}">${m.slice(0, 3)}</button>`
+  ).join('');
+}
+
+function renderYearNav() {
+  document.getElementById('year-display').textContent = state.year;
+}
+
+function renderExpenses() {
+  document.getElementById('expenses-container').innerHTML = EXPENSE_DEFS.map(def => {
+    const d = state.data[def.key] || {};
+    return `<div class="exp-row">
+      <div>
+        <div class="exp-label">${def.label}</div>
+        <div class="exp-sub">${def.sub}</div>
+      </div>
+      ${TEMPLATES[def.type](def, d)}
+    </div>`;
+  }).join('');
+}
+
+function renderExtras() {
+  const extras = Array.isArray(state.data.extras) ? state.data.extras : [];
+  const paidOpts = [['','— Quem? —'],['norton','Norton'],['eron','Eron'],['ambos','Ambos']];
+  document.getElementById('extras-tbody').innerHTML = extras.map((ex, i) => {
+    const tot = n(ex.norton) + n(ex.eron);
+    const opts = paidOpts.map(([v, l]) =>
+      `<option value="${v}"${ex.paid_by === v ? ' selected' : ''}>${l}</option>`
+    ).join('');
+    return `<tr data-index="${i}">
+      <td><input type="text" class="xd" data-index="${i}" value="${ex.descricao || ''}" placeholder="Descrição"></td>
+      <td><input type="number" step="0.01" min="0" class="xn" data-index="${i}" value="${fmtVal(ex.norton)}" placeholder="0,00"></td>
+      <td><input type="number" step="0.01" min="0" class="xe" data-index="${i}" value="${fmtVal(ex.eron)}"   placeholder="0,00"></td>
+      <td class="total-cell">${tot > 0 ? fmt(tot) : '—'}</td>
+      <td><select class="xp" data-index="${i}">${opts}</select></td>
+      <td><button class="btn-del" data-index="${i}" title="Remover">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderSummary() {
+  const r = calculateAll(state.data);
+  document.getElementById('n-owed').textContent = fmt(r.norton.owed);
+  document.getElementById('e-owed').textContent = fmt(r.eron.owed);
+  document.getElementById('n-paid').textContent = fmt(r.norton.paid);
+  document.getElementById('e-paid').textContent = fmt(r.eron.paid);
+
+  const nb = document.getElementById('n-balance');
+  const eb = document.getElementById('e-balance');
+  nb.textContent = fmt(Math.abs(r.norton.balance));
+  eb.textContent = fmt(Math.abs(r.eron.balance));
+  nb.className = r.norton.balance >= 0 ? 'pos' : 'neg';
+  eb.className = r.eron.balance  >= 0 ? 'pos' : 'neg';
+
+  const verdict = document.getElementById('verdict');
+  const diff = Math.abs(r.norton.balance);
+  const hasData = r.norton.owed > 0.005 || r.eron.owed > 0.005;
+
+  if (!hasData) {
+    verdict.textContent = '— Insira os dados do mês —';
+    verdict.className = 'ok';
+  } else if (diff < 0.005) {
+    verdict.textContent = '✓ Saldo zerado — estão quite!';
+    verdict.className = 'ok';
+  } else if (r.norton.balance > 0) {
+    verdict.innerHTML = `Eron deve pagar <strong>${fmt(diff)}</strong> ao Norton`;
+    verdict.className = 'owing';
+  } else {
+    verdict.innerHTML = `Norton deve pagar <strong>${fmt(diff)}</strong> ao Eron`;
+    verdict.className = 'owing';
+  }
+}
+
+function setStatus(s) {
+  const bar = document.getElementById('status-bar');
+  const msgs = { saving: '⏳ Salvando…', saved: '✓ Salvo', error: '⚠ Erro ao salvar' };
+  bar.textContent = msgs[s] || '';
+  bar.className = s || '';
+  if (s === 'saved') setTimeout(() => { if (bar.className === 'saved') bar.className = ''; }, 2200);
+}
+
+// ── Computed span update (no re-render) ─────────────────────────
+function refreshComputed(key) {
+  const span = document.getElementById(`cp_${key}`);
+  if (!span) return;
+  const d = state.data[key] || {};
+  const def = EXPENSE_DEFS.find(x => x.key === key);
+  if (!def) return;
+  let c;
+  switch (def.type) {
+    case 'deisiane':    c = calcDeisiane(d.base, d.bonus, d.consultas_norton, d.consultas_eron); break;
+    case 'ionide':      c = calcIonide(d.total);                                                 break;
+    case 'condominio2': c = calcCondominio2(d.total, d.academia);                                break;
+    case 'simples':     c = calcSimples(d.valor, d.nf_norton, d.nf_eron);                        break;
+    default: return;
+  }
+  span.innerHTML = `<span class="n">N: ${fmt(c.nShare)}</span> · <span class="e">E: ${fmt(c.eShare)}</span>`;
+}
+
+// ── Extras total cell update ─────────────────────────────────────
+function refreshExtraTotal(idx) {
+  const row = document.querySelector(`#extras-tbody tr[data-index="${idx}"]`);
+  if (!row) return;
+  const ex = (state.data.extras || [])[idx];
+  if (!ex) return;
+  const tot = n(ex.norton) + n(ex.eron);
+  row.querySelector('.total-cell').textContent = tot > 0 ? fmt(tot) : '—';
+}
+
+// ── Persistence ─────────────────────────────────────────────────
+function scheduleSave() {
+  clearTimeout(state.saveTimer);
+  setStatus('saving');
+  state.saveTimer = setTimeout(async () => {
+    try {
+      await saveMonth(monthKey(), state.data);
+      setStatus('saved');
+    } catch (err) {
+      console.error(err);
+      setStatus('error');
+    }
+  }, 800);
+}
+
+async function flushSave() {
+  if (!state.saveTimer) return;
+  clearTimeout(state.saveTimer);
+  state.saveTimer = null;
+  try {
+    await saveMonth(monthKey(), state.data);
+    setStatus('saved');
+  } catch (err) {
+    console.error(err);
+    setStatus('error');
+  }
+}
+
+// ── Data mutation ────────────────────────────────────────────────
+function setField(key, field, raw) {
+  if (!state.data[key]) state.data[key] = {};
+  const isNum = field !== 'paid_by';
+  state.data[key][field] = isNum ? (raw === '' ? null : parseFloat(raw)) : raw;
+}
+
+// ── Event binding ────────────────────────────────────────────────
+function bindAll() {
+  // Tab clicks
+  document.getElementById('tabs').addEventListener('click', e => {
+    const m = e.target.dataset.month;
+    if (m !== undefined) switchMonth(parseInt(m), state.year);
+  });
+
+  // Year nav
+  document.getElementById('year-prev').addEventListener('click', () => switchMonth(state.month, state.year - 1));
+  document.getElementById('year-next').addEventListener('click', () => switchMonth(state.month, state.year + 1));
+
+  // Expense inputs (delegated — no re-render, focus preserved)
+  const expContainer = document.getElementById('expenses-container');
+  const handleExpInput = e => {
+    const { key, field } = e.target.dataset;
+    if (!key || !field) return;
+    setField(key, field, e.target.value);
+    refreshComputed(key);
+    renderSummary();
+    scheduleSave();
+  };
+  expContainer.addEventListener('input',  handleExpInput);
+  expContainer.addEventListener('change', handleExpInput);
+
+  // Extras: add row
+  document.getElementById('btn-add-extra').addEventListener('click', () => {
+    if (!state.data.extras) state.data.extras = [];
+    state.data.extras.push({ descricao: '', norton: null, eron: null, paid_by: '' });
+    renderExtras();
+    renderSummary();
+    scheduleSave();
+  });
+
+  const extrasBody = document.getElementById('extras-tbody');
+
+  // Extras: input
+  extrasBody.addEventListener('input', e => {
+    const idx = parseInt(e.target.dataset.index);
+    if (isNaN(idx)) return;
+    const ex = (state.data.extras || [])[idx];
+    if (!ex) return;
+    if (e.target.classList.contains('xd')) ex.descricao = e.target.value;
+    if (e.target.classList.contains('xn')) ex.norton = e.target.value === '' ? null : parseFloat(e.target.value);
+    if (e.target.classList.contains('xe')) ex.eron   = e.target.value === '' ? null : parseFloat(e.target.value);
+    refreshExtraTotal(idx);
+    renderSummary();
+    scheduleSave();
+  });
+
+  // Extras: paid_by select
+  extrasBody.addEventListener('change', e => {
+    const idx = parseInt(e.target.dataset.index);
+    if (isNaN(idx)) return;
+    const ex = (state.data.extras || [])[idx];
+    if (!ex) return;
+    if (e.target.classList.contains('xp')) {
+      ex.paid_by = e.target.value;
+      renderSummary();
+      scheduleSave();
+    }
+  });
+
+  // Extras: delete row
+  extrasBody.addEventListener('click', e => {
+    if (e.target.classList.contains('btn-del')) {
+      const idx = parseInt(e.target.dataset.index);
+      if (!isNaN(idx)) {
+        state.data.extras.splice(idx, 1);
+        renderExtras();
+        renderSummary();
+        scheduleSave();
+      }
+    }
+  });
+}
+
+// ── Lifecycle ────────────────────────────────────────────────────
+async function switchMonth(month, year) {
+  await flushSave();
+
+  state.month = month;
+  state.year  = year;
+  setStatus('');
+
+  renderTabs();
+  renderYearNav();
+
+  document.getElementById('expenses-container').innerHTML =
+    '<div style="padding:2rem;text-align:center;color:var(--muted);font-size:0.9rem">Carregando…</div>';
+
+  state.data = await loadMonth(monthKey());
+
+  renderExpenses();
+  renderExtras();
+  renderSummary();
+}
+
+async function init() {
+  renderTabs();
+  renderYearNav();
+  bindAll();
+  state.data = await loadMonth(monthKey());
+  renderExpenses();
+  renderExtras();
+  renderSummary();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
