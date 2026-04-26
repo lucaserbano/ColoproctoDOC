@@ -621,51 +621,45 @@ function showApp() {
   document.getElementById('btn-logout').style.display = '';
 }
 
-function showLogin(msg) {
+function showLogin() {
   document.getElementById('login-overlay').classList.remove('hidden');
   document.getElementById('btn-logout').style.display = 'none';
-  if (msg) document.getElementById('login-error').textContent = msg;
 }
 
 async function initAuth() {
-  if (!db) { showApp(); return; }
+  if (!db) return;
 
   const { data: { session } } = await db.auth.getSession();
-  if (session) {
-    showApp();
-  } else {
-    showLogin();
-  }
+  if (session) { showApp(); return; }
 
-  db.auth.onAuthStateChange((_event, session) => {
-    if (session) showApp(); else showLogin();
-  });
+  // Sem sessão — mostra login e aguarda o usuário autenticar antes de continuar
+  showLogin();
+  await new Promise(resolve => {
+    const emailEl    = document.getElementById('login-email');
+    const passwordEl = document.getElementById('login-password');
+    const errorEl    = document.getElementById('login-error');
+    const btnLogin   = document.getElementById('btn-login');
 
-  const emailEl    = document.getElementById('login-email');
-  const passwordEl = document.getElementById('login-password');
-  const errorEl    = document.getElementById('login-error');
-  const btnLogin   = document.getElementById('btn-login');
-
-  async function doLogin() {
-    const email    = emailEl.value.trim();
-    const password = passwordEl.value;
-    if (!email || !password) { errorEl.textContent = 'Preencha e-mail e senha.'; return; }
-    btnLogin.disabled = true;
-    btnLogin.textContent = 'Entrando…';
-    errorEl.textContent = '';
-    const { error } = await db.auth.signInWithPassword({ email, password });
-    if (error) {
-      errorEl.textContent = 'E-mail ou senha incorretos.';
-      btnLogin.disabled = false;
-      btnLogin.textContent = 'Entrar';
+    async function doLogin() {
+      const email    = emailEl.value.trim();
+      const password = passwordEl.value;
+      if (!email || !password) { errorEl.textContent = 'Preencha e-mail e senha.'; return; }
+      btnLogin.disabled = true;
+      btnLogin.textContent = 'Entrando…';
+      errorEl.textContent = '';
+      const { error } = await db.auth.signInWithPassword({ email, password });
+      if (error) {
+        errorEl.textContent = 'E-mail ou senha incorretos.';
+        btnLogin.disabled = false;
+        btnLogin.textContent = 'Entrar';
+      } else {
+        showApp();
+        resolve();
+      }
     }
-  }
 
-  btnLogin.addEventListener('click', doLogin);
-  passwordEl.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-
-  document.getElementById('btn-logout').addEventListener('click', async () => {
-    await db.auth.signOut();
+    btnLogin.addEventListener('click', doLogin);
+    passwordEl.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
   });
 }
 
@@ -1043,6 +1037,12 @@ function setField(key, field, raw) {
 
 // ── Event binding ────────────────────────────────────────────────
 function bindAll() {
+  // Logout
+  document.getElementById('btn-logout').addEventListener('click', async () => {
+    if (db) await db.auth.signOut();
+    window.location.reload();
+  });
+
   // Tab clicks
   document.getElementById('tabs').addEventListener('click', e => {
     const m = e.target.dataset.month;
