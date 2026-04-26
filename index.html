@@ -686,6 +686,11 @@ async function loadMonth(my) {
     .single();
   if (error && error.code !== 'PGRST116') {
     console.error('loadMonth:', error);
+    document.getElementById('expenses-container').innerHTML =
+      `<div style="padding:1.5rem;color:var(--red);font-size:0.875rem">
+        ⚠ Erro ao carregar dados do banco.<br>
+        <span style="font-family:monospace;font-size:0.78rem">${error.message} (${error.code})</span>
+      </div>`;
     return {};
   }
   return (data && data.data) ? data.data : {};
