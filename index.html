@@ -30,6 +30,104 @@
       min-height: 100vh;
     }
 
+    /* ── Login overlay ── */
+    #login-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    #login-overlay.hidden { display: none; }
+
+    .login-box {
+      background: white;
+      border-radius: 14px;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+    }
+    .login-box .logo {
+      text-align: center;
+      margin-bottom: 0.3rem;
+    }
+    .login-box .logo h2 {
+      color: var(--primary-dark);
+      font-size: 1.2rem;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+    }
+    .login-box .logo p {
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-top: 2px;
+    }
+    .login-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .login-field label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .login-field input {
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem 0.8rem;
+      font-size: 0.95rem;
+      color: var(--text);
+      width: 100%;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .login-field input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(10,124,130,0.15);
+    }
+    #login-error {
+      font-size: 0.78rem;
+      color: var(--red);
+      text-align: center;
+      min-height: 1rem;
+    }
+    #btn-login {
+      background: var(--primary-dark);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.7rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    #btn-login:hover { background: var(--primary); }
+    #btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* ── Logout button ── */
+    #btn-logout {
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 6px;
+      padding: 0.32rem 0.75rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    #btn-logout:hover { background: rgba(255,255,255,0.28); }
+
     /* ── Config warning ── */
     #config-warning {
       display: none;
@@ -237,7 +335,23 @@
     table.xt input[type="text"] { width: 100%; min-width: 140px; }
     table.xt input[type="number"] { width: 100px; }
     table.xt select { width: 110px; }
-    table.xt .total-cell { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+    table.xt .result-cell { font-size: 0.72rem; white-space: nowrap; min-width: 110px; }
+
+    .chk-5050 {
+      font-size: 0.75rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      cursor: pointer;
+      white-space: nowrap;
+      justify-content: center;
+    }
+    input.x-ro {
+      background: var(--bg) !important;
+      color: var(--muted);
+      cursor: not-allowed;
+    }
 
     .btn-del {
       background: none;
@@ -346,6 +460,25 @@
 </head>
 <body>
 
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="logo">
+      <h2>ColoproctoDOC</h2>
+      <p>Gestão de Contas do Consultório</p>
+    </div>
+    <div class="login-field">
+      <label for="login-email">E-mail</label>
+      <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label for="login-password">Senha</label>
+      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div id="login-error"></div>
+    <button id="btn-login">Entrar</button>
+  </div>
+</div>
+
 <div id="config-warning">
   ⚠ Configure o Supabase antes de usar: edite <strong>SUPABASE_URL</strong> e <strong>SUPABASE_ANON_KEY</strong> no início do &lt;script&gt; neste arquivo.
   Os dados <strong>não serão salvos</strong> até que as credenciais sejam inseridas.
@@ -356,10 +489,13 @@
     <h1>ColoproctoDOC</h1>
     <div class="sub">Gestão de Contas do Consultório</div>
   </div>
-  <div class="year-nav">
-    <button id="year-prev" title="Ano anterior">‹</button>
-    <span id="year-display"></span>
-    <button id="year-next" title="Próximo ano">›</button>
+  <div style="display:flex;align-items:center;gap:0.9rem">
+    <div class="year-nav">
+      <button id="year-prev" title="Ano anterior">‹</button>
+      <span id="year-display"></span>
+      <button id="year-next" title="Próximo ano">›</button>
+    </div>
+    <button id="btn-logout" style="display:none">Sair</button>
   </div>
 </header>
 
@@ -383,10 +519,12 @@
         <thead>
           <tr>
             <th>Descrição</th>
+            <th>Total (R$)</th>
+            <th style="text-align:center">50/50</th>
             <th>Norton (R$)</th>
             <th>Eron (R$)</th>
-            <th>Total</th>
             <th>Quem pagou</th>
+            <th>Resultado</th>
             <th></th>
           </tr>
         </thead>
@@ -476,6 +614,60 @@ const EXPENSE_DEFS = [
   { key: 'ligga',             label: 'Ligga Internet',             sub: '50% cada',                                   type: 'simple'      },
   { key: 'sercomtel',         label: 'Sercomtel (Tel. Fixo)',      sub: '50% cada',                                   type: 'simple'      },
 ];
+
+// ── Auth ────────────────────────────────────────────────────────
+function showApp() {
+  document.getElementById('login-overlay').classList.add('hidden');
+  document.getElementById('btn-logout').style.display = '';
+}
+
+function showLogin(msg) {
+  document.getElementById('login-overlay').classList.remove('hidden');
+  document.getElementById('btn-logout').style.display = 'none';
+  if (msg) document.getElementById('login-error').textContent = msg;
+}
+
+async function initAuth() {
+  if (!db) { showApp(); return; }
+
+  const { data: { session } } = await db.auth.getSession();
+  if (session) {
+    showApp();
+  } else {
+    showLogin();
+  }
+
+  db.auth.onAuthStateChange((_event, session) => {
+    if (session) showApp(); else showLogin();
+  });
+
+  const emailEl    = document.getElementById('login-email');
+  const passwordEl = document.getElementById('login-password');
+  const errorEl    = document.getElementById('login-error');
+  const btnLogin   = document.getElementById('btn-login');
+
+  async function doLogin() {
+    const email    = emailEl.value.trim();
+    const password = passwordEl.value;
+    if (!email || !password) { errorEl.textContent = 'Preencha e-mail e senha.'; return; }
+    btnLogin.disabled = true;
+    btnLogin.textContent = 'Entrando…';
+    errorEl.textContent = '';
+    const { error } = await db.auth.signInWithPassword({ email, password });
+    if (error) {
+      errorEl.textContent = 'E-mail ou senha incorretos.';
+      btnLogin.disabled = false;
+      btnLogin.textContent = 'Entrar';
+    }
+  }
+
+  btnLogin.addEventListener('click', doLogin);
+  passwordEl.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+  document.getElementById('btn-logout').addEventListener('click', async () => {
+    await db.auth.signOut();
+  });
+}
 
 // ── App state ───────────────────────────────────────────────────
 const now = new Date();
@@ -618,6 +810,20 @@ function numHTML(key, field, value, placeholder, cls = '') {
   return `<input type="number" step="0.01" min="0" class="${cls}" data-key="${key}" data-field="${field}" value="${fmtVal(value)}" placeholder="${placeholder}">`;
 }
 
+function computeExtraResult(nShare, eShare, paidBy) {
+  if (!paidBy) return '<span style="color:var(--muted)">—</span>';
+  if (paidBy === 'ambos') return '<span style="color:var(--green);font-size:0.7rem">Cada um paga sua parte</span>';
+  if (paidBy === 'norton') {
+    if (eShare > 0.005) return `<span style="color:var(--eron);font-weight:600">Eron → Norton<br>${fmt(eShare)}</span>`;
+    return '<span style="color:var(--muted)">—</span>';
+  }
+  if (paidBy === 'eron') {
+    if (nShare > 0.005) return `<span style="color:var(--norton);font-weight:600">Norton → Eron<br>${fmt(nShare)}</span>`;
+    return '<span style="color:var(--muted)">—</span>';
+  }
+  return '<span style="color:var(--muted)">—</span>';
+}
+
 function computedSpan(id, nVal, eVal) {
   return `<span class="computed" id="cp_${id}"><span class="n">N: ${fmt(nVal)}</span> · <span class="e">E: ${fmt(eVal)}</span></span>`;
 }
@@ -707,16 +913,22 @@ function renderExtras() {
   const extras = Array.isArray(state.data.extras) ? state.data.extras : [];
   const paidOpts = [['','— Quem? —'],['norton','Norton'],['eron','Eron'],['ambos','Ambos']];
   document.getElementById('extras-tbody').innerHTML = extras.map((ex, i) => {
-    const tot = n(ex.norton) + n(ex.eron);
+    const is5050 = (ex.split_type || 'custom') === '5050';
+    const total = (ex.total !== undefined && ex.total !== null) ? ex.total : (n(ex.norton) + n(ex.eron));
+    const nShare = is5050 ? total / 2 : n(ex.norton);
+    const eShare = is5050 ? total / 2 : n(ex.eron);
     const opts = paidOpts.map(([v, l]) =>
       `<option value="${v}"${ex.paid_by === v ? ' selected' : ''}>${l}</option>`
     ).join('');
+    const resultHTML = computeExtraResult(nShare, eShare, ex.paid_by);
     return `<tr data-index="${i}">
       <td><input type="text" class="xd" data-index="${i}" value="${ex.descricao || ''}" placeholder="Descrição"></td>
-      <td><input type="number" step="0.01" min="0" class="xn" data-index="${i}" value="${fmtVal(ex.norton)}" placeholder="0,00"></td>
-      <td><input type="number" step="0.01" min="0" class="xe" data-index="${i}" value="${fmtVal(ex.eron)}"   placeholder="0,00"></td>
-      <td class="total-cell">${tot > 0 ? fmt(tot) : '—'}</td>
+      <td><input type="number" step="0.01" min="0" class="xt-total" data-index="${i}" value="${fmtVal(total)}" placeholder="0,00"></td>
+      <td style="text-align:center"><label class="chk-5050"><input type="checkbox" class="x5050" data-index="${i}"${is5050 ? ' checked' : ''}> 50/50</label></td>
+      <td><input type="number" step="0.01" min="0" class="xn${is5050 ? ' x-ro' : ''}" data-index="${i}" value="${fmtVal(nShare)}" placeholder="0,00"${is5050 ? ' readonly' : ''}></td>
+      <td><input type="number" step="0.01" min="0" class="xe${is5050 ? ' x-ro' : ''}" data-index="${i}" value="${fmtVal(eShare)}" placeholder="0,00"${is5050 ? ' readonly' : ''}></td>
       <td><select class="xp" data-index="${i}">${opts}</select></td>
+      <td class="result-cell" data-index="${i}">${resultHTML}</td>
       <td><button class="btn-del" data-index="${i}" title="Remover">✕</button></td>
     </tr>`;
   }).join('');
@@ -781,14 +993,17 @@ function refreshComputed(key) {
   span.innerHTML = `<span class="n">N: ${fmt(c.nShare)}</span> · <span class="e">E: ${fmt(c.eShare)}</span>`;
 }
 
-// ── Extras total cell update ─────────────────────────────────────
-function refreshExtraTotal(idx) {
-  const row = document.querySelector(`#extras-tbody tr[data-index="${idx}"]`);
-  if (!row) return;
+// ── Extras result cell update ────────────────────────────────────
+function refreshExtraResult(idx) {
   const ex = (state.data.extras || [])[idx];
   if (!ex) return;
-  const tot = n(ex.norton) + n(ex.eron);
-  row.querySelector('.total-cell').textContent = tot > 0 ? fmt(tot) : '—';
+  const cell = document.querySelector(`#extras-tbody .result-cell[data-index="${idx}"]`);
+  if (!cell) return;
+  const is5050 = (ex.split_type || 'custom') === '5050';
+  const total = (ex.total !== undefined && ex.total !== null) ? ex.total : (n(ex.norton) + n(ex.eron));
+  const nShare = is5050 ? total / 2 : n(ex.norton);
+  const eShare = is5050 ? total / 2 : n(ex.eron);
+  cell.innerHTML = computeExtraResult(nShare, eShare, ex.paid_by);
 }
 
 // ── Persistence ─────────────────────────────────────────────────
@@ -854,7 +1069,7 @@ function bindAll() {
   // Extras: add row
   document.getElementById('btn-add-extra').addEventListener('click', () => {
     if (!state.data.extras) state.data.extras = [];
-    state.data.extras.push({ descricao: '', norton: null, eron: null, paid_by: '' });
+    state.data.extras.push({ descricao: '', total: null, split_type: '5050', norton: null, eron: null, paid_by: '' });
     renderExtras();
     renderSummary();
     scheduleSave();
@@ -868,22 +1083,58 @@ function bindAll() {
     if (isNaN(idx)) return;
     const ex = (state.data.extras || [])[idx];
     if (!ex) return;
-    if (e.target.classList.contains('xd')) ex.descricao = e.target.value;
-    if (e.target.classList.contains('xn')) ex.norton = e.target.value === '' ? null : parseFloat(e.target.value);
-    if (e.target.classList.contains('xe')) ex.eron   = e.target.value === '' ? null : parseFloat(e.target.value);
-    refreshExtraTotal(idx);
+    const is5050 = (ex.split_type || 'custom') === '5050';
+    if (e.target.classList.contains('xd')) {
+      ex.descricao = e.target.value;
+    }
+    if (e.target.classList.contains('xt-total')) {
+      const total = e.target.value === '' ? null : parseFloat(e.target.value);
+      ex.total = total;
+      if (is5050) {
+        ex.norton = total !== null ? total / 2 : null;
+        ex.eron   = total !== null ? total / 2 : null;
+        const row = document.querySelector(`#extras-tbody tr[data-index="${idx}"]`);
+        if (row) {
+          const ni = row.querySelector('.xn');
+          const ei = row.querySelector('.xe');
+          if (ni) ni.value = ex.norton !== null ? ex.norton : '';
+          if (ei) ei.value = ex.eron   !== null ? ex.eron   : '';
+        }
+      }
+    }
+    if (e.target.classList.contains('xn') && !is5050) {
+      ex.norton = e.target.value === '' ? null : parseFloat(e.target.value);
+    }
+    if (e.target.classList.contains('xe') && !is5050) {
+      ex.eron = e.target.value === '' ? null : parseFloat(e.target.value);
+    }
+    refreshExtraResult(idx);
     renderSummary();
     scheduleSave();
   });
 
-  // Extras: paid_by select
+  // Extras: paid_by select and 50/50 toggle
   extrasBody.addEventListener('change', e => {
     const idx = parseInt(e.target.dataset.index);
     if (isNaN(idx)) return;
     const ex = (state.data.extras || [])[idx];
     if (!ex) return;
+    if (e.target.classList.contains('x5050')) {
+      const is5050 = e.target.checked;
+      ex.split_type = is5050 ? '5050' : 'custom';
+      if (is5050) {
+        const total = n(ex.total);
+        ex.norton = total / 2;
+        ex.eron   = total / 2;
+      }
+      renderExtras();
+      renderSummary();
+      scheduleSave();
+      return;
+    }
     if (e.target.classList.contains('xp')) {
       ex.paid_by = e.target.value;
+      refreshExtraResult(idx);
       renderSummary();
       scheduleSave();
     }
@@ -928,6 +1179,7 @@ async function init() {
   renderTabs();
   renderYearNav();
   bindAll();
+  await initAuth();
   state.data = await loadMonth(monthKey());
   renderExpenses();
   renderExtras();
