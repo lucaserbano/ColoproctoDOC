@@ -433,7 +433,25 @@
     .pos { color: #4ade80; }
     .neg { color: #f87171; }
 
-    #verdict {
+    .sum-card { margin-bottom: 1rem; }
+    .sum-card:last-of-type { margin-bottom: 0; }
+    .sum-card h2 .sum-sub {
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 600;
+      opacity: 0.9;
+    }
+
+    .sum-total {
+      padding: 0.5rem 1.5rem;
+      font-size: 0.85rem;
+      text-align: right;
+      opacity: 0.85;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .sum-total strong { font-weight: 700; }
+
+    .verdict {
       padding: 0.9rem 1.5rem;
       font-size: 1.05rem;
       font-weight: 700;
@@ -441,8 +459,109 @@
       border-top: 1px solid rgba(255,255,255,0.12);
       background: rgba(0,0,0,0.08);
     }
-    #verdict.ok    { color: #a3e635; }
-    #verdict.owing { color: #fde68a; }
+    .verdict.ok    { color: #a3e635; }
+    .verdict.owing { color: #fde68a; }
+
+    /* ── Month grand total ── */
+    .month-total {
+      background: var(--accent);
+      color: #3a2a00;
+      box-shadow: 0 4px 16px rgba(240,165,0,0.25);
+    }
+    .month-total .mt-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.9rem 1.5rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .month-total .mt-row strong { font-size: 1.25rem; }
+
+    /* ── Acertos antecipados card ── */
+    .acerto-empty {
+      padding: 1rem 1.25rem;
+      color: var(--muted);
+      font-size: 0.83rem;
+    }
+    .acerto-item {
+      padding: 0.9rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .acerto-item:last-child { border-bottom: none; }
+    .acerto-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 0.9rem;
+      margin-bottom: 0.7rem;
+    }
+    .acerto-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .acerto-actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .acerto-actions .btn-del { font-size: 1.05rem; }
+    .btn-ok {
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 0.38rem 0.95rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-ok:hover { background: #15803d; }
+    .btn-ok:disabled { opacity: 0.75; cursor: default; }
+    .acerto-verdict {
+      margin-top: 0.8rem;
+      padding: 0.6rem 0.9rem;
+      border-radius: 6px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      text-align: center;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+    }
+    .acerto-verdict.muted  { background: var(--bg); color: var(--muted); font-weight: 500; }
+    .acerto-verdict.ok     { background: #dcfce7; color: #166534; }
+    .acerto-chk-title {
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 0.5rem;
+    }
+    .acerto-checks {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 0.4rem 1rem;
+    }
+    .acerto-chk {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.83rem;
+      cursor: pointer;
+    }
+    .acerto-chk.taken { color: var(--muted); }
+    .acerto-chk .taken-hint { font-size: 0.7rem; opacity: 0.7; }
 
     /* ── Responsive ── */
     @media (max-width: 680px) {
@@ -533,40 +652,18 @@
     </div>
     <button class="btn-add" id="btn-add-extra">+ Adicionar item</button>
   </div>
+
+  <div class="card">
+    <div class="card-title">
+      Acertos Antecipados
+      <span style="font-weight:400;text-transform:none;font-size:0.78rem;opacity:0.65"> — despesas já quitadas antes do fim do mês</span>
+    </div>
+    <div id="acertos-container"></div>
+    <button class="btn-add" id="btn-add-acerto">+ Adicionar acerto antecipado</button>
+  </div>
 </main>
 
-<section id="summary">
-  <div class="sum-card">
-    <h2>Resumo do Mês</h2>
-    <table class="st">
-      <thead>
-        <tr>
-          <th></th>
-          <th class="nc">Norton</th>
-          <th class="ec">Eron</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Cota nas despesas</td>
-          <td id="n-owed">R$ 0,00</td>
-          <td id="e-owed">R$ 0,00</td>
-        </tr>
-        <tr>
-          <td>Total que pagou</td>
-          <td id="n-paid">R$ 0,00</td>
-          <td id="e-paid">R$ 0,00</td>
-        </tr>
-        <tr class="row-bal">
-          <td>Saldo (pago − cota)</td>
-          <td><span id="n-balance" class="pos">R$ 0,00</span></td>
-          <td><span id="e-balance" class="pos">R$ 0,00</span></td>
-        </tr>
-      </tbody>
-    </table>
-    <div id="verdict" class="ok">— Insira os dados do mês —</div>
-  </div>
-</section>
+<section id="summary"></section>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
@@ -749,11 +846,19 @@ function applyPayment(calc, paidBy) {
   return { nPaid: 0, ePaid: 0 };
 }
 
-function calculateAll(data) {
+// Calcula um grupo de despesas. acertoId = null → grupo final (despesas sem acerto
+// ou com acerto órfão = comportamento atual). acertoId = id → só as despesas daquele acerto.
+function calcGroup(data, acertoId) {
+  const validIds = new Set((Array.isArray(data.acertos) ? data.acertos : []).map(a => a.id));
+  const belongs = (itemAcerto) => acertoId === null
+    ? (!itemAcerto || !validIds.has(itemAcerto))   // grupo final: sem acerto ou órfão
+    : (itemAcerto === acertoId);
+
   let nOwed = 0, eOwed = 0, nPaid = 0, ePaid = 0;
 
   for (const def of EXPENSE_DEFS) {
     const d = data[def.key] || {};
+    if (!belongs(d.acerto)) continue;
     let calc;
     switch (def.type) {
       case 'simple':      calc = calcHalf(d.valor);                                            break;
@@ -773,6 +878,7 @@ function calculateAll(data) {
   // Extras
   const extras = Array.isArray(data.extras) ? data.extras : [];
   for (const ex of extras) {
+    if (!belongs(ex.acerto)) continue;
     const nv = n(ex.norton), ev = n(ex.eron), tot = nv + ev;
     nOwed += nv;
     eOwed += ev;
@@ -784,6 +890,7 @@ function calculateAll(data) {
   return {
     norton: { owed: nOwed, paid: nPaid, balance: nPaid - nOwed },
     eron:   { owed: eOwed, paid: ePaid, balance: ePaid - eOwed },
+    total:  nOwed + eOwed,
   };
 }
 
@@ -791,6 +898,18 @@ function calculateAll(data) {
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmt = v => BRL.format(v || 0);
 const fmtVal = v => (v !== null && v !== undefined && v !== '') ? parseFloat(v) : '';
+
+function uid() {
+  return (window.crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : 'a_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+}
+
+function formatDateBR(iso) {
+  if (!iso) return 'sem data';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
 
 function paidByHTML(key, value) {
   const opts = [
@@ -933,37 +1052,124 @@ function renderExtras() {
   }).join('');
 }
 
-function renderSummary() {
-  const r = calculateAll(state.data);
-  document.getElementById('n-owed').textContent = fmt(r.norton.owed);
-  document.getElementById('e-owed').textContent = fmt(r.eron.owed);
-  document.getElementById('n-paid').textContent = fmt(r.norton.paid);
-  document.getElementById('e-paid').textContent = fmt(r.eron.paid);
-
-  const nb = document.getElementById('n-balance');
-  const eb = document.getElementById('e-balance');
-  nb.textContent = fmt(Math.abs(r.norton.balance));
-  eb.textContent = fmt(Math.abs(r.eron.balance));
-  nb.className = r.norton.balance >= 0 ? 'pos' : 'neg';
-  eb.className = r.eron.balance  >= 0 ? 'pos' : 'neg';
-
-  const verdict = document.getElementById('verdict');
+function verdictHTML(r) {
   const diff = Math.abs(r.norton.balance);
   const hasData = r.norton.owed > 0.005 || r.eron.owed > 0.005;
+  if (!hasData)            return `<div class="verdict ok">— Insira os dados do mês —</div>`;
+  if (diff < 0.005)        return `<div class="verdict ok">✓ Saldo zerado — estão quite!</div>`;
+  if (r.norton.balance > 0) return `<div class="verdict owing">Eron deve pagar <strong>${fmt(diff)}</strong> ao Norton</div>`;
+  return `<div class="verdict owing">Norton deve pagar <strong>${fmt(diff)}</strong> ao Eron</div>`;
+}
 
-  if (!hasData) {
-    verdict.textContent = '— Insira os dados do mês —';
-    verdict.className = 'ok';
-  } else if (diff < 0.005) {
-    verdict.textContent = '✓ Saldo zerado — estão quite!';
-    verdict.className = 'ok';
-  } else if (r.norton.balance > 0) {
-    verdict.innerHTML = `Eron deve pagar <strong>${fmt(diff)}</strong> ao Norton`;
-    verdict.className = 'owing';
-  } else {
-    verdict.innerHTML = `Norton deve pagar <strong>${fmt(diff)}</strong> ao Eron`;
-    verdict.className = 'owing';
+function acertoVerdictHTML(r) {
+  const diff = Math.abs(r.norton.balance);
+  const hasData = r.norton.owed > 0.005 || r.eron.owed > 0.005;
+  if (!hasData)             return `<div class="acerto-verdict muted">Marque as despesas deste acerto para ver quem paga a quem</div>`;
+  if (diff < 0.005)         return `<div class="acerto-verdict ok">✓ Saldo zerado — ninguém precisa pagar</div>`;
+  if (r.norton.balance > 0) return `<div class="acerto-verdict">→ Eron paga <strong>${fmt(diff)}</strong> ao Norton</div>`;
+  return `<div class="acerto-verdict">→ Norton paga <strong>${fmt(diff)}</strong> ao Eron</div>`;
+}
+
+function summaryBlockHTML(title, subtitle, r, totalLabel) {
+  const nbCls = r.norton.balance >= 0 ? 'pos' : 'neg';
+  const ebCls = r.eron.balance  >= 0 ? 'pos' : 'neg';
+  return `
+    <div class="sum-card">
+      <h2>${title}${subtitle ? ` <span class="sum-sub">${subtitle}</span>` : ''}</h2>
+      <table class="st">
+        <thead>
+          <tr><th></th><th class="nc">Norton</th><th class="ec">Eron</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Cota nas despesas</td><td>${fmt(r.norton.owed)}</td><td>${fmt(r.eron.owed)}</td></tr>
+          <tr><td>Total que pagou</td><td>${fmt(r.norton.paid)}</td><td>${fmt(r.eron.paid)}</td></tr>
+          <tr class="row-bal">
+            <td>Saldo (pago − cota)</td>
+            <td><span class="${nbCls}">${fmt(Math.abs(r.norton.balance))}</span></td>
+            <td><span class="${ebCls}">${fmt(Math.abs(r.eron.balance))}</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="sum-total">${totalLabel}: <strong>${fmt(r.total)}</strong></div>
+      ${verdictHTML(r)}
+    </div>`;
+}
+
+function renderSummary() {
+  const acertos = Array.isArray(state.data.acertos) ? state.data.acertos : [];
+  const sorted = [...acertos].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+  let html = '';
+  let grandTotal = 0;
+
+  for (const ac of sorted) {
+    const r = calcGroup(state.data, ac.id);
+    grandTotal += r.total;
+    const title = `Acerto antecipado — ${formatDateBR(ac.date)}`;
+    html += summaryBlockHTML(title, ac.label || '', r, 'Total deste acerto');
   }
+
+  const rf = calcGroup(state.data, null);
+  grandTotal += rf.total;
+  const finalTitle = acertos.length ? 'Acerto final — fim do mês' : 'Resumo do Mês';
+  html += summaryBlockHTML(finalTitle, '', rf, acertos.length ? 'Total deste acerto' : 'Total das contas');
+
+  if (acertos.length) {
+    html += `
+      <div class="sum-card month-total">
+        <div class="mt-row"><span>Total das contas do mês</span><strong>${fmt(grandTotal)}</strong></div>
+      </div>`;
+  }
+
+  document.getElementById('summary').innerHTML = html;
+}
+
+function renderAcertos() {
+  const acertos = Array.isArray(state.data.acertos) ? state.data.acertos : [];
+  const container = document.getElementById('acertos-container');
+
+  if (!acertos.length) {
+    container.innerHTML = '<div class="acerto-empty">Nenhum acerto antecipado neste mês. Adicione um para separar despesas já quitadas do acerto final do mês.</div>';
+    return;
+  }
+
+  const extras = Array.isArray(state.data.extras) ? state.data.extras : [];
+
+  container.innerHTML = acertos.map(ac => {
+    const expChecks = EXPENSE_DEFS.map(def => {
+      const d = state.data[def.key] || {};
+      const mine = d.acerto === ac.id;
+      const elsewhere = d.acerto && !mine;
+      return `<label class="acerto-chk${elsewhere ? ' taken' : ''}">
+        <input type="checkbox" class="ac-exp" data-acerto="${ac.id}" data-key="${def.key}"${mine ? ' checked' : ''}>
+        ${def.label}${elsewhere ? ' <span class="taken-hint">(em outro acerto)</span>' : ''}</label>`;
+    }).join('');
+
+    const extraChecks = extras.map((ex, xi) => {
+      if (!ex.descricao) return '';
+      const mine = ex.acerto === ac.id;
+      const elsewhere = ex.acerto && !mine;
+      return `<label class="acerto-chk${elsewhere ? ' taken' : ''}">
+        <input type="checkbox" class="ac-extra" data-acerto="${ac.id}" data-index="${xi}"${mine ? ' checked' : ''}>
+        ${ex.descricao}${elsewhere ? ' <span class="taken-hint">(em outro acerto)</span>' : ''}</label>`;
+    }).join('');
+
+    const r = calcGroup(state.data, ac.id);
+
+    return `<div class="acerto-item">
+      <div class="acerto-head">
+        <label class="acerto-field">Data <input type="date" class="ac-date" data-acerto="${ac.id}" value="${ac.date || ''}"></label>
+        <label class="acerto-field">Rótulo <input type="text" class="ac-label" data-acerto="${ac.id}" value="${ac.label || ''}" placeholder="ex: 1ª semana"></label>
+        <div class="acerto-actions">
+          <button class="btn-ok ac-ok" data-acerto="${ac.id}" title="Confirmar e salvar este acerto">✓ OK</button>
+          <button class="btn-del ac-del" data-acerto="${ac.id}" title="Remover acerto">✕</button>
+        </div>
+      </div>
+      <div class="acerto-chk-title">Despesas incluídas neste acerto</div>
+      <div class="acerto-checks">${expChecks}${extraChecks}</div>
+      ${acertoVerdictHTML(r)}
+    </div>`;
+  }).join('');
 }
 
 function setStatus(s) {
@@ -1020,6 +1226,22 @@ function scheduleSave() {
   }, 800);
 }
 
+// Salvamento imediato sob demanda (botão "OK" do acerto) — sempre dá retorno visível
+async function saveNow() {
+  clearTimeout(state.saveTimer);
+  state.saveTimer = null;
+  setStatus('saving');
+  try {
+    await saveMonth(monthKey(), state.data);
+    setStatus('saved');
+    return true;
+  } catch (err) {
+    console.error(err);
+    setStatus('error');
+    return false;
+  }
+}
+
 async function flushSave() {
   if (!state.saveTimer) return;
   clearTimeout(state.saveTimer);
@@ -1065,6 +1287,7 @@ function bindAll() {
     if (!key || !field) return;
     setField(key, field, e.target.value);
     refreshComputed(key);
+    renderAcertos();
     renderSummary();
     scheduleSave();
   };
@@ -1114,6 +1337,7 @@ function bindAll() {
       ex.eron = e.target.value === '' ? null : parseFloat(e.target.value);
     }
     refreshExtraResult(idx);
+    renderAcertos();
     renderSummary();
     scheduleSave();
   });
@@ -1133,6 +1357,7 @@ function bindAll() {
         ex.eron   = total / 2;
       }
       renderExtras();
+      renderAcertos();
       renderSummary();
       scheduleSave();
       return;
@@ -1140,6 +1365,7 @@ function bindAll() {
     if (e.target.classList.contains('xp')) {
       ex.paid_by = e.target.value;
       refreshExtraResult(idx);
+      renderAcertos();
       renderSummary();
       scheduleSave();
     }
@@ -1152,9 +1378,74 @@ function bindAll() {
       if (!isNaN(idx)) {
         state.data.extras.splice(idx, 1);
         renderExtras();
+        renderAcertos();
         renderSummary();
         scheduleSave();
       }
+    }
+  });
+
+  // Acertos: add
+  document.getElementById('btn-add-acerto').addEventListener('click', () => {
+    if (!state.data.acertos) state.data.acertos = [];
+    state.data.acertos.push({ id: uid(), date: '', label: '' });
+    renderAcertos();
+    renderSummary();
+    scheduleSave();
+  });
+
+  const acContainer = document.getElementById('acertos-container');
+
+  // Acertos: edit date / label
+  acContainer.addEventListener('input', e => {
+    const id = e.target.dataset.acerto;
+    if (!id) return;
+    const ac = (state.data.acertos || []).find(a => a.id === id);
+    if (!ac) return;
+    if (e.target.classList.contains('ac-date'))  { ac.date = e.target.value;  renderSummary(); scheduleSave(); }
+    if (e.target.classList.contains('ac-label')) { ac.label = e.target.value; renderSummary(); scheduleSave(); }
+  });
+
+  // Acertos: toggle expense / extra membership
+  acContainer.addEventListener('change', e => {
+    const id = e.target.dataset.acerto;
+    if (!id) return;
+    if (e.target.classList.contains('ac-exp')) {
+      const key = e.target.dataset.key;
+      if (!state.data[key]) state.data[key] = {};
+      state.data[key].acerto = e.target.checked ? id : null;
+      renderAcertos();
+      renderSummary();
+      scheduleSave();
+    } else if (e.target.classList.contains('ac-extra')) {
+      const xi = parseInt(e.target.dataset.index);
+      const ex = (state.data.extras || [])[xi];
+      if (ex) {
+        ex.acerto = e.target.checked ? id : null;
+        renderAcertos();
+        renderSummary();
+        scheduleSave();
+      }
+    }
+  });
+
+  // Acertos: OK (salvar agora) e remover
+  acContainer.addEventListener('click', async e => {
+    if (e.target.classList.contains('ac-ok')) {
+      const btn = e.target;
+      btn.disabled = true;
+      btn.textContent = 'Salvando…';
+      const ok = await saveNow();
+      btn.textContent = ok ? '✓ Salvo!' : '✗ Erro';
+      setTimeout(() => { btn.disabled = false; btn.textContent = '✓ OK'; }, 2000);
+      return;
+    }
+    if (e.target.classList.contains('ac-del')) {
+      const id = e.target.dataset.acerto;
+      state.data.acertos = (state.data.acertos || []).filter(a => a.id !== id);
+      renderAcertos();
+      renderSummary();
+      scheduleSave();
     }
   });
 }
@@ -1177,6 +1468,7 @@ async function switchMonth(month, year) {
 
   renderExpenses();
   renderExtras();
+  renderAcertos();
   renderSummary();
 }
 
@@ -1188,6 +1480,7 @@ async function init() {
   state.data = await loadMonth(monthKey());
   renderExpenses();
   renderExtras();
+  renderAcertos();
   renderSummary();
 }
 

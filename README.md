@@ -61,3 +61,25 @@ Como os dados ficam no Supabase, ambos verão e editarão as mesmas informaçõe
 Use a seção de Extras para despesas como CRM, consertos, alvarás, etc.
 Para cada extra, insira o valor que **Norton** deve e o que **Eron** deve separadamente.
 Despesas 50/50: coloque o mesmo valor para ambos.
+
+## Acertos Antecipados
+
+Quando Norton e Eron quitam parte das contas antes do fim do mês (ex.: no fim da 1ª semana,
+ou semanalmente) para ninguém ficar com débito grande, use a seção **Acertos Antecipados**:
+
+1. Clique em **"+ Adicionar acerto antecipado"** e informe a **data** (e um rótulo opcional,
+   ex.: "1ª semana").
+2. Marque, nas **caixas de seleção**, quais despesas já foram acertadas nesse momento.
+3. Cada despesa pertence a um único acerto — marcá-la em um acerto a remove do anterior.
+
+No **Resumo do Mês** aparecerá um bloco separado para cada acerto antecipado (com seu próprio
+"quem deve a quem", útil para guiar a transferência da semana) e um bloco **Acerto final — fim
+do mês** com o restante. Despesas não marcadas ficam sempre no acerto final.
+
+Meses **sem nenhum acerto antecipado** continuam funcionando como antes — a seção fica vazia e
+o resumo mostra um único bloco.
+
+## Total das contas do mês
+
+O Resumo do Mês mostra o **Total das contas do mês** (soma de todas as despesas + extras),
+útil para acompanhar o gasto total do consultório independentemente de quem pagou.
